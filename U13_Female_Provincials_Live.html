@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U13 Female Provincials – Live Standings</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+  :root {
+    --purple-dark: #4B1D7A;
+    --purple-mid:  #7B3FA0;
+    --purple-light:#E8D5F5;
+    --gold:        #F0C040;
+    --ice:         #EAF4FF;
+    --ice-mid:     #C8DFF5;
+    --green:       #1A6E35;
+    --green-light: #D4EDDA;
+    --red:         #8B1A1A;
+    --red-light:   #FDDCDC;
+    --amber:       #7A5200;
+    --amber-light: #FFF3CD;
+    --text:        #1a1a2e;
+    --sub:         #555577;
+    --border:      #C5A8E0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: linear-gradient(160deg, #0d0020 0%, #1a0040 40%, #0a1535 100%);
+    min-height: 100vh;
+    color: var(--text);
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, var(--purple-dark) 0%, #2a0050 50%, #0a1535 100%);
+    padding: 24px 32px 20px;
+    text-align: center;
+    border-bottom: 3px solid var(--gold);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before { content:'🏒'; position:absolute; left:20px; top:50%; transform:translateY(-50%); font-size:48px; opacity:.15; }
+  .hero::after  { content:'🏒'; position:absolute; right:20px; top:50%; transform:translateY(-50%); font-size:48px; opacity:.15; }
+  .hero-eyebrow { font-family:'Bebas Neue',sans-serif; letter-spacing:4px; font-size:13px; color:var(--gold); margin-bottom:4px; }
+  .hero-title   { font-family:'Bebas Neue',sans-serif; font-size:clamp(28px,5vw,52px); color:#fff; letter-spacing:3px; line-height:1; margin-bottom:6px; }
+  .hero-sub     { font-size:13px; color:#B89FD0; letter-spacing:1px; }
+  .hero-badge   { display:inline-block; background:var(--gold); color:#2a0050; font-family:'Bebas Neue'; font-size:13px; letter-spacing:2px; padding:3px 12px; border-radius:20px; margin-top:8px; }
+
+  /* ── LIVE INDICATOR ── */
+  .live-bar {
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.15);
+    border-radius: 8px; padding: 10px 16px; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; font-size: 12px; color: #B89FD0;
+  }
+  .live-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: #4CAF50; margin-right: 6px;
+    animation: pulse 2s infinite;
+  }
+  .live-dot.stale { background: #FFC107; animation: none; }
+  .live-dot.error { background: #f44336; animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .live-bar strong { color: #fff; }
+  .refresh-btn {
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+    color: #B89FD0; padding: 4px 12px; border-radius: 4px; cursor: pointer;
+    font-family: 'Barlow'; font-size: 12px; transition: all .2s;
+  }
+  .refresh-btn:hover { background: rgba(255,255,255,.2); color: #fff; }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  /* ── TABS ── */
+  .tabs { display:flex; gap:6px; margin-bottom:20px; }
+  .tab {
+    flex:1; padding:10px 8px; font-family:'Bebas Neue'; font-size:15px; letter-spacing:2px;
+    background:rgba(255,255,255,.08); color:#B89FD0;
+    border:1px solid rgba(255,255,255,.12); border-radius:6px; cursor:pointer; transition:all .2s;
+  }
+  .tab.active  { background:var(--purple-dark); color:var(--gold); border-color:var(--gold); }
+  .tab:hover:not(.active) { background:rgba(255,255,255,.14); color:#fff; }
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  /* ── CARDS ── */
+  .card { background:#fff; border-radius:10px; box-shadow:0 4px 24px rgba(0,0,0,.4); overflow:hidden; margin-bottom:20px; }
+  .card-header { background:var(--purple-dark); color:#fff; font-family:'Bebas Neue'; letter-spacing:2px; font-size:16px; padding:10px 18px; display:flex; align-items:center; gap:8px; }
+  .card-header .gold { color:var(--gold); }
+
+  /* ── STANDINGS TABLE ── */
+  .standings-table { width:100%; border-collapse:collapse; }
+  .standings-table th { background:var(--purple-mid); color:#fff; font-family:'Bebas Neue'; letter-spacing:1.5px; font-size:13px; padding:9px 8px; text-align:center; border-bottom:2px solid var(--gold); }
+  .standings-table th.left { text-align:left; padding-left:14px; }
+  .standings-table td { padding:8px; text-align:center; font-size:13px; border-bottom:1px solid #e8d5f5; }
+  .standings-table td.team-name { text-align:left; padding-left:14px; font-weight:700; font-size:13px; }
+  .standings-table tr:nth-child(even) td { background:var(--purple-light); }
+  .standings-table tr:hover td { background:var(--ice-mid); }
+  .rank-badge { display:inline-block; width:22px; height:22px; border-radius:50%; font-family:'Bebas Neue'; font-size:13px; line-height:22px; text-align:center; margin-right:6px; }
+  .rank-1 { background:var(--gold); color:#2a0050; }
+  .rank-2 { background:var(--ice-mid); color:var(--purple-dark); }
+  .rank-other { background:#eee; color:#888; }
+  .pts-cell { font-weight:700; font-size:15px; color:var(--purple-dark); }
+  .status-pill { display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:.5px; }
+  .status-clinched   { background:var(--green-light); color:var(--green); }
+  .status-eliminated { background:var(--red-light); color:var(--red); }
+  .status-contention { background:var(--amber-light); color:var(--amber); }
+
+  /* ── SCHEDULE TABLE ── */
+  .schedule-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .schedule-table th { background:var(--purple-mid); color:#fff; font-family:'Bebas Neue'; letter-spacing:1.5px; font-size:12px; padding:8px; text-align:center; }
+  .schedule-table td { padding:7px 10px; border-bottom:1px solid #e8d5f5; }
+  .schedule-table tr:nth-child(even) td { background:var(--purple-light); }
+  .schedule-table tr.day-header td { background:var(--purple-dark); color:var(--gold); font-family:'Bebas Neue'; letter-spacing:2px; font-size:13px; }
+  .score-display { font-weight:700; font-size:14px; color:var(--purple-dark); text-align:center; min-width:60px; display:inline-block; }
+  .score-pending { color:#aaa; font-size:12px; }
+  .played-row td { background:#f0fff4 !important; }
+  .winner-name { color:var(--green); font-weight:700; }
+
+  /* ── SCENARIOS ── */
+  .scenario-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:700px){ .scenario-grid { grid-template-columns:1fr; } }
+  .team-card { background:#fff; border-radius:10px; box-shadow:0 3px 16px rgba(0,0,0,.25); overflow:hidden; }
+  .team-card-header { padding:12px 16px; color:#fff; font-family:'Bebas Neue'; font-size:16px; letter-spacing:2px; }
+  .team-card-body { padding:14px 16px; }
+  .scenario-item { display:flex; gap:10px; margin-bottom:10px; font-size:13px; line-height:1.45; }
+  .scenario-bullet { font-size:16px; flex-shrink:0; margin-top:1px; }
+  .scenario-clinch .scenario-bullet { color:var(--green); }
+  .scenario-likely .scenario-bullet { color:#1a70b8; }
+  .scenario-help .scenario-bullet   { color:var(--amber); }
+  .scenario-elim .scenario-bullet   { color:var(--red); }
+  .scenario-info .scenario-bullet   { color:var(--purple-mid); }
+
+  /* ── TIEBREAKERS ── */
+  .tb-section { margin-bottom:20px; }
+  .tb-title { font-family:'Bebas Neue'; font-size:15px; letter-spacing:2px; color:var(--gold); background:var(--purple-dark); padding:8px 16px; border-radius:6px 6px 0 0; }
+  .tb-list { background:#fff; border-radius:0 0 8px 8px; overflow:hidden; }
+  .tb-row { display:flex; align-items:flex-start; gap:14px; padding:10px 16px; border-bottom:1px solid #e8d5f5; font-size:13px; }
+  .tb-row:last-child { border-bottom:none; }
+  .tb-row:nth-child(even) { background:var(--purple-light); }
+  .tb-num { background:var(--purple-mid); color:#fff; font-family:'Bebas Neue'; font-size:13px; letter-spacing:1px; min-width:32px; text-align:center; padding:2px 6px; border-radius:4px; flex-shrink:0; }
+  .tb-desc { line-height:1.45; }
+
+  /* ── NOTE ── */
+  .note { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:12px 16px; font-size:12px; color:#B89FD0; margin-bottom:16px; line-height:1.6; }
+  .note strong { color:var(--gold); }
+
+  /* ── LOADING SKELETON ── */
+  .skeleton { background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.1) 50%, rgba(255,255,255,.05) 75%); background-size:200% 100%; animation: shimmer 1.5s infinite; border-radius:4px; height:14px; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  th[title] { cursor:help; border-bottom:1px dashed var(--gold); }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-eyebrow">Corner Brook Minor Hockey Association</div>
+  <div class="hero-title">U13 Female Provincials</div>
+  <div class="hero-sub">March 20 – 22, 2026 &nbsp;·&nbsp; Corner Brook, NL</div>
+  <div class="hero-badge">🔴 Live Standings</div>
+</div>
+
+<div class="container">
+
+  <div class="live-bar">
+    <span>
+      <span class="live-dot" id="live-dot"></span>
+      <span id="live-status">Connecting to live scores…</span>
+    </span>
+    <span style="display:flex;align-items:center;gap:16px">
+      <span id="last-updated" style="font-size:11px"></span>
+      <button class="refresh-btn" onclick="fetchScores()">↻ Refresh</button>
+    </span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showPanel('standings',this)">📊 Standings</button>
+    <button class="tab" onclick="showPanel('schedule',this)">📅 Schedule</button>
+    <button class="tab" onclick="showPanel('scenarios',this)">🎯 Scenarios</button>
+    <button class="tab" onclick="showPanel('tiebreakers',this)">⚖️ Tiebreakers</button>
+  </div>
+
+  <!-- STANDINGS -->
+  <div id="panel-standings" class="panel active">
+    <div class="note">Standings update automatically every 60 seconds. <strong>Top 2 teams advance to the Semi-Finals.</strong></div>
+    <div class="card">
+      <div class="card-header">🏆 <span>Preliminary Round Standings</span> <span class="gold">— Top 2 Advance</span></div>
+      <div style="overflow-x:auto">
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th class="left" style="width:30px">#</th>
+              <th class="left">Team</th>
+              <th>GP</th><th>W</th><th>L</th><th>T</th>
+              <th>GF</th><th>GA</th>
+              <th>PTS</th>
+              <th title="Goals For ÷ (Goals For + Goals Against)">GA%</th>
+              <th>Max PTS</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="standings-body"><tr><td colspan="12" style="padding:20px;text-align:center;color:#aaa">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div style="padding:8px 14px;font-size:11px;color:var(--sub);background:#f9f4ff;border-top:1px solid #e8d5f5">
+        GA% = Goals For ÷ (Goals For + Goals Against) &nbsp;|&nbsp; Win = 2 pts, Tie = 1 pt, Loss = 0 pts
+      </div>
+    </div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div id="panel-schedule" class="panel">
+    <div class="note">Scores appear here as games are completed.</div>
+    <div class="card">
+      <div class="card-header">📅 <span>Full Schedule & Results</span></div>
+      <div style="overflow-x:auto">
+        <table class="schedule-table">
+          <thead><tr><th>Time</th><th>Visitor</th><th>Score</th><th>Home</th><th>Rink</th></tr></thead>
+          <tbody id="schedule-body"><tr><td colspan="5" style="padding:20px;text-align:center;color:#aaa">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENARIOS -->
+  <div id="panel-scenarios" class="panel">
+    <div class="note">
+      <strong>Clinch threshold:</strong> With 6 teams playing 5 games each (max 10 pts), a team with <strong>8+ points</strong> cannot be caught. <strong>7 pts</strong> advances in nearly all scenarios. <strong>6 pts</strong> requires help.
+    </div>
+    <div class="scenario-grid" id="scenarios-grid"><div style="color:#B89FD0;padding:20px">Loading…</div></div>
+  </div>
+
+  <!-- TIEBREAKERS -->
+  <div id="panel-tiebreakers" class="panel">
+    <div class="tb-section">
+      <div class="tb-title">Two-Team Tiebreaker</div>
+      <div class="tb-list">
+        <div class="tb-row"><div class="tb-num">TB 1</div><div class="tb-desc">Winner of the head-to-head game between the two tied teams gains the higher position.</div></div>
+        <div class="tb-row"><div class="tb-num">TB 2</div><div class="tb-desc">The team with the most wins in the Preliminary Round gains the higher position.</div></div>
+        <div class="tb-row"><div class="tb-num">TB 3</div><div class="tb-desc">Best Goal Average using <em>all</em> Preliminary Round games: GF ÷ (GF + GA). Higher percentage advances.</div></div>
+        <div class="tb-row"><div class="tb-num">TB 4</div><div class="tb-desc">Fewest penalty minutes in all Preliminary Round games.</div></div>
+        <div class="tb-row"><div class="tb-num">TB 5</div><div class="tb-desc">The team that scored the first goal in the head-to-head game between the tied teams.</div></div>
+        <div class="tb-row"><div class="tb-num">TB 6</div><div class="tb-desc">Single coin toss determines the higher position.</div></div>
+      </div>
+    </div>
+    <div class="tb-section">
+      <div class="tb-title">Three-or-More Team Tiebreaker</div>
+      <div class="tb-list">
+        <div class="tb-row"><div class="tb-num">TB 1</div><div class="tb-desc">Most wins among tied teams — using <em>only</em> head-to-head games between the tied teams.</div></div>
+        <div class="tb-row"><div class="tb-num">TB 2</div><div class="tb-desc">Best Goal Average in head-to-head games among tied teams only: GF ÷ (GF + GA). Do not revert to 2-team tiebreaker.</div></div>
+        <div class="tb-row"><div class="tb-num">TB 3</div><div class="tb-desc">Fewest goals against in <em>all</em> Preliminary Round games played.</div></div>
+        <div class="tb-row"><div class="tb-num">TB 4</div><div class="tb-desc">Most goals for in <em>all</em> Preliminary Round games played.</div></div>
+        <div class="tb-row"><div class="tb-num">TB 5</div><div class="tb-desc">Fewest penalty minutes in all Preliminary Round games.</div></div>
+        <div class="tb-row"><div class="tb-num">TB 6</div><div class="tb-desc">Coin toss. In a 3-team coin toss, the odd team gains the highest position.</div></div>
+      </div>
+    </div>
+    <div class="tb-section">
+      <div class="tb-title">Key Notes</div>
+      <div class="tb-list">
+        <div class="tb-row"><div class="tb-num">⚠</div><div class="tb-desc"><strong>Points first:</strong> All tiebreakers only apply between teams tied on points.</div></div>
+        <div class="tb-row"><div class="tb-num">⚠</div><div class="tb-desc"><strong>Goal Average formula:</strong> GF ÷ (GF + GA) — not GF ÷ GA. Example: 10 GF, 4 GA → 10 ÷ 14 = <strong>.714</strong></div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// !! IMPORTANT: Replace this URL with your deployed Apps Script URL !!
+// ═══════════════════════════════════════════════════════════════
+const API_URL = "https://script.google.com/macros/s/AKfycbx5fJ4y_kbrs2zS3aIvapsmvm2Y0bXL3yLZe1qaLwHGJx-i7QByVpOsZWuVx731zKE7/exec";
+
+// ── Team & schedule data ──────────────────────────────────────
+// 0=StJohns, 1=CornerBrook, 2=Glovertown, 3=LakeMelville, 4=Lewisporte, 5=Marystown
+const TEAMS = [
+  "St. John's Caps",
+  "Corner Brook Royals",
+  "Glovertown & Area Tornadoes",
+  "Lake Melville Xtreme",
+  "Lewisporte Seahawks",
+  "Marystown Mariners",
+];
+
+const TEAM_COLORS = [
+  "#B7770D","#4B1D7A","#7B3FA0","#1F4E79","#145A32","#7D3C98"
+];
+
+const SCHEDULE = [
+  {time:"1:30pm",  day:"Friday, March 20",    v:2, h:1, rink:"KINSMEN"},
+  {time:"2:00pm",  day:"Friday, March 20",    v:4, h:0, rink:"MAIN"},
+  {time:"3:00pm",  day:"Friday, March 20",    v:3, h:5, rink:"KINSMEN"},
+  {time:"6:30pm",  day:"Friday, March 20",    v:0, h:2, rink:"MAIN"},
+  {time:"6:30pm",  day:"Friday, March 20",    v:1, h:3, rink:"KINSMEN"},
+  {time:"8:00pm",  day:"Friday, March 20",    v:5, h:4, rink:"MAIN"},
+  {time:"9:00am",  day:"Saturday, March 21",  v:3, h:4, rink:"MAIN"},
+  {time:"9:30am",  day:"Saturday, March 21",  v:5, h:2, rink:"KINSMEN"},
+  {time:"10:30am", day:"Saturday, March 21",  v:0, h:1, rink:"MAIN"},
+  {time:"3:30pm",  day:"Saturday, March 21",  v:2, h:4, rink:"MAIN"},
+  {time:"4:00pm",  day:"Saturday, March 21",  v:3, h:0, rink:"KINSMEN"},
+  {time:"5:00pm",  day:"Saturday, March 21",  v:1, h:5, rink:"MAIN"},
+  {time:"8:30am",  day:"Sunday, March 22",    v:5, h:0, rink:"MAIN"},
+  {time:"9:00am",  day:"Sunday, March 22",    v:4, h:1, rink:"KINSMEN"},
+  {time:"10:00am", day:"Sunday, March 22",    v:2, h:3, rink:"MAIN"},
+];
+
+// Scores loaded from API: array of {vGoals, hGoals} indexed by game
+let scores = SCHEDULE.map(() => ({ vGoals: null, hGoals: null }));
+let lastFetchTime = null;
+let fetchInterval = null;
+
+// ── Fetch scores from Google Sheets API ──────────────────────
+async function fetchScores() {
+  const dot    = document.getElementById('live-dot');
+  const status = document.getElementById('live-status');
+
+  try {
+    const res  = await fetch(API_URL + "?t=" + Date.now()); // cache-bust
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+
+    // Map API scores back to our local scores array
+    data.scores.forEach(entry => {
+      const i = entry.gameIndex;
+      if (i >= 0 && i < scores.length) {
+        scores[i].vGoals = entry.visitorScore;
+        scores[i].hGoals = entry.homeScore;
+      }
+    });
+
+    lastFetchTime = new Date();
+    dot.className = 'live-dot';
+    const played = scores.filter(s => s.vGoals !== null).length;
+    status.textContent = `Live · ${played} of 15 games completed`;
+    document.getElementById('last-updated').textContent =
+      'Updated ' + lastFetchTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+    renderAll();
+
+  } catch (err) {
+    dot.className = 'live-dot error';
+    status.textContent = 'Could not reach live scores — showing last known data';
+    console.error('Score fetch error:', err);
+  }
+}
+
+// ── Calculations ─────────────────────────────────────────────
+function calcStandings() {
+  const stats = TEAMS.map((_,i) => ({ idx:i, gp:0, w:0, l:0, t:0, gf:0, ga:0, pts:0 }));
+
+  SCHEDULE.forEach((g, gi) => {
+    const s = scores[gi];
+    if (s.vGoals === null || s.hGoals === null) return;
+    const vg = s.vGoals, hg = s.hGoals;
+    const v = stats[g.v], h = stats[g.h];
+    v.gp++; h.gp++;
+    v.gf += vg; v.ga += hg;
+    h.gf += hg; h.ga += vg;
+    if (vg > hg)      { v.w++; h.l++; }
+    else if (hg > vg) { h.w++; v.l++; }
+    else              { v.t++; h.t++; }
+    v.pts = v.w*2 + v.t;
+    h.pts = h.w*2 + h.t;
+  });
+
+  stats.forEach(s => {
+    s.gaAvg  = (s.gf + s.ga) > 0 ? s.gf / (s.gf + s.ga) : 0;
+    s.maxPts = s.pts + (5 - s.gp) * 2;
+  });
+
+  stats.sort((a,b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    if (b.w   !== a.w)   return b.w   - a.w;
+    return b.gaAvg - a.gaAvg;
+  });
+
+  stats.forEach((s, rank) => {
+    if (s.gp === 5) {
+      s.status = rank < 2 ? 'clinched' : 'eliminated';
+    } else {
+      const third = stats[2];
+      if (s.maxPts < (third ? third.pts : 0)) {
+        s.status = 'eliminated';
+      } else if (rank < 2 && s.pts > (third ? third.maxPts : 0)) {
+        s.status = 'clinched';
+      } else {
+        s.status = 'contention';
+      }
+    }
+  });
+
+  return stats;
+}
+
+// ── Render standings ─────────────────────────────────────────
+function renderStandings(stats) {
+  const tbody = document.getElementById('standings-body');
+  tbody.innerHTML = '';
+  stats.forEach((s, rank) => {
+    const tr   = document.createElement('tr');
+    const badge = `<span class="rank-badge rank-${rank<2?rank+1:'other'}">${rank+1}</span>`;
+    const gaStr = (s.gf + s.ga) > 0 ? s.gaAvg.toFixed(3) : '—';
+    const statusMap = {
+      clinched:   '<span class="status-pill status-clinched">✓ CLINCHED</span>',
+      eliminated: '<span class="status-pill status-eliminated">✗ ELIMINATED</span>',
+      contention: '<span class="status-pill status-contention">In Contention</span>',
+    };
+    tr.innerHTML = `
+      <td>${badge}</td>
+      <td class="team-name">${TEAMS[s.idx]}</td>
+      <td>${s.gp}</td><td>${s.w}</td><td>${s.l}</td><td>${s.t}</td>
+      <td>${s.gf}</td><td>${s.ga}</td>
+      <td class="pts-cell">${s.pts}</td>
+      <td>${gaStr}</td>
+      <td style="font-size:11px;color:var(--sub)">${s.maxPts}</td>
+      <td>${statusMap[s.status] || ''}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Render schedule ───────────────────────────────────────────
+function renderSchedule() {
+  const tbody = document.getElementById('schedule-body');
+  tbody.innerHTML = '';
+  let lastDay = '';
+
+  SCHEDULE.forEach((g, gi) => {
+    if (g.day !== lastDay) {
+      lastDay = g.day;
+      const tr = document.createElement('tr');
+      tr.className = 'day-header';
+      tr.innerHTML = `<td colspan="5">⬡ ${g.day}</td>`;
+      tbody.appendChild(tr);
+    }
+
+    const s      = scores[gi];
+    const played = s.vGoals !== null && s.hGoals !== null;
+    const tr     = document.createElement('tr');
+    if (played) tr.className = 'played-row';
+
+    let scoreCell, vName = TEAMS[g.v], hName = TEAMS[g.h];
+    let vClass = '', hClass = '';
+
+    if (played) {
+      if (s.vGoals > s.hGoals) vClass = 'winner-name';
+      if (s.hGoals > s.vGoals) hClass = 'winner-name';
+      scoreCell = `<span class="score-display">${s.vGoals} – ${s.hGoals}</span>`;
+    } else {
+      scoreCell = `<span class="score-pending">vs</span>`;
+    }
+
+    tr.innerHTML = `
+      <td style="font-size:12px;white-space:nowrap">${g.time}</td>
+      <td style="text-align:right" class="${vClass}">${vName}</td>
+      <td style="text-align:center">${scoreCell}</td>
+      <td class="${hClass}">${hName}</td>
+      <td style="font-size:11px;color:var(--sub)">${g.rink}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Render scenarios ──────────────────────────────────────────
+function renderScenarios(stats) {
+  const grid = document.getElementById('scenarios-grid');
+  grid.innerHTML = '';
+
+  TEAMS.forEach((team, ti) => {
+    const s         = stats.find(x => x.idx === ti);
+    const gamesLeft = 5 - s.gp;
+    const maxAdd    = gamesLeft * 2;
+    const card      = document.createElement('div');
+    card.className  = 'team-card';
+    let items = [];
+
+    if (s.status === 'clinched') {
+      items.push({cls:'scenario-clinch', icon:'✅', text:`<strong>${team} have CLINCHED a playoff spot!</strong> Guaranteed top-2 finish.`});
+    } else if (s.status === 'eliminated') {
+      items.push({cls:'scenario-elim', icon:'❌', text:`<strong>${team} have been ELIMINATED.</strong> Cannot finish top-2.`});
+    } else {
+      const need8 = Math.max(0, 8 - s.pts);
+      const need7 = Math.max(0, 7 - s.pts);
+
+      if (s.pts >= 8) {
+        items.push({cls:'scenario-clinch', icon:'🟢', text:`At <strong>${s.pts} pts</strong> — virtually guaranteed to advance.`});
+      } else if (maxAdd + s.pts >= 8) {
+        items.push({cls:'scenario-clinch', icon:'🟢', text:`Win ${Math.ceil(need8/2)} more to reach 8+ pts and <strong>virtually clinch</strong>.`});
+      }
+
+      if (s.pts >= 7) {
+        items.push({cls:'scenario-likely', icon:'🔵', text:`At <strong>${s.pts} pts</strong> — advances in most scenarios.`});
+      } else if (maxAdd + s.pts >= 7) {
+        items.push({cls:'scenario-likely', icon:'🔵', text:`Reach <strong>7 pts</strong> (need ${need7} more from ${gamesLeft} game${gamesLeft>1?'s':''}) to advance in most scenarios.`});
+      }
+
+      if (s.pts >= 6 && s.pts < 7) {
+        items.push({cls:'scenario-help', icon:'🟡', text:`At <strong>6 pts</strong> — likely needs help or a favourable tiebreaker.`});
+      } else if (maxAdd + s.pts >= 6 && maxAdd + s.pts < 7) {
+        items.push({cls:'scenario-help', icon:'🟡', text:`Max possible: ${maxAdd + s.pts} pts — will <strong>require help</strong>.`});
+      }
+
+      items.push({cls:'scenario-info', icon:'ℹ️', text:`<strong>${gamesLeft} game${gamesLeft>1?'s':''} left.</strong> ${s.pts} pts (${s.w}W-${s.l}L-${s.t}T) · Max: <strong>${s.maxPts}</strong>`});
+
+      const nextGames = SCHEDULE
+        .map((g,gi) => ({g, played: scores[gi].vGoals !== null}))
+        .filter(({g, played}) => !played && (g.v===ti || g.h===ti))
+        .slice(0,2)
+        .map(({g}) => `vs ${TEAMS[g.v===ti ? g.h : g.v]}`);
+      if (nextGames.length)
+        items.push({cls:'scenario-info', icon:'📅', text:`Next: <strong>${nextGames.join(', ')}</strong>`});
+
+      items.push({cls:'scenario-info', icon:'⚖️', text:`GA% = GF÷(GF+GA) is the <strong>3rd tiebreaker</strong> (2-team) and <strong>2nd</strong> (3+ team). Every goal counts.`});
+
+      const contenders = stats.filter(x => x.status==='contention').map(x => x.idx);
+      const keyGame = SCHEDULE
+        .map((g,gi) => ({g, played: scores[gi].vGoals !== null}))
+        .find(({g, played}) => !played && (
+          (g.v===ti && contenders.includes(g.h)) ||
+          (g.h===ti && contenders.includes(g.v))
+        ));
+      if (keyGame) {
+        const opp = keyGame.g.v===ti ? keyGame.g.h : keyGame.g.v;
+        items.push({cls:'scenario-help', icon:'🔑', text:`<strong>Key game:</strong> vs ${TEAMS[opp]} — head-to-head is Tiebreaker #1 if level on points.`});
+      }
+    }
+
+    card.innerHTML = `
+      <div class="team-card-header" style="background:${TEAM_COLORS[ti]}">${team}</div>
+      <div class="team-card-body">
+        ${items.map(item => `
+          <div class="scenario-item ${item.cls}">
+            <span class="scenario-bullet">${item.icon}</span>
+            <span>${item.text}</span>
+          </div>`).join('')}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ── Render all panels ─────────────────────────────────────────
+function renderAll() {
+  const stats = calcStandings();
+  renderStandings(stats);
+  renderSchedule();
+  renderScenarios(stats);
+}
+
+// ── Tab switching ─────────────────────────────────────────────
+function showPanel(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// ── Auto-refresh every 60 seconds ────────────────────────────
+fetchScores();
+fetchInterval = setInterval(fetchScores, 60000);
+</script>
+</body>
+</html>
